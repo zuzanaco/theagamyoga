@@ -1,0 +1,3 @@
+import { SectionHeading } from "./SectionHeading";
+
+export function Contact() { return <section className="contact" id="contact"><div className="container contact__grid"><div><SectionHeading eyebrow="Practise together" title="You’re warmly invited." /><p>For class details, private sessions, or collaborations, reach out via the contact details below.</p><p className="contact__placeholder">[Replace with approved contact email and/or booking link.]</p></div><div className="contact__card"><span>Cologne, Germany</span><a href="mailto:hello@example.com">hello@example.com</a><p>[Placeholder contact details]</p></div></div></section>; }

@@ -1,0 +1,10 @@
+type SectionHeadingProps = { eyebrow: string; title: string; centered?: boolean };
+
+export function SectionHeading({ eyebrow, title, centered = false }: SectionHeadingProps) {
+  return (
+    <div className={`section-heading${centered ? " section-heading--centered" : ""}`}>
+      <span className="eyebrow">{eyebrow}</span>
+      <h2>{title}</h2>
+    </div>
+  );
+}
