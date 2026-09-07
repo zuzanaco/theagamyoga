@@ -1,9 +1,9 @@
 import { SectionHeading } from "./SectionHeading";
 
 const pillars = [
-  ["மௌனம்", "Mounam — Stillness", "A few full minutes to arrive in the body before movement begins. Stillness is not a pause from practice; it is the beginning of it."],
-  ["மூச்சு", "Moochu — Breath", "Breath leads every transition. If the breath becomes strained, the shape can soften—there is no other rule to prove."],
-  ["மெய்ப்பொருள்", "Meiporul — Essence", "Alignment is about what is true for your body today. Variations are an essential part of the practice, never an apology."],
+  ["மௌனம்", "Mounam — Stillness", "I open and close every class in real silence. Not a formality — I give you a few full minutes to arrive in the body before any movement begins."],
+  ["மூச்சு", "Moochu — Breath", "I let breath lead every movement, never the other way round. If your breath gets short, I'll tell you the pose is too big — that's the only rule I hold to."],
+  ["மெய்ப்பொருள்", "Meiporul — Essence", "My alignment cues are about what's true for your body that day, not a textbook shape. I offer modifications freely — you'll never need to apologize for taking them."],
 ];
 
-export function Philosophy() { return <section className="philosophy" id="agam"><div className="container"><SectionHeading eyebrow="The meaning of Agam" title="Three ideas held in every class." /><div className="pillars">{pillars.map(([tamil, word, copy]) => <article className="pillar" key={word}><p className="pillar__tamil">{tamil}</p><span className="pillar__word">{word}</span><p>{copy}</p></article>)}</div></div></section>; }
+export function Philosophy() { return <section className="philosophy" id="agam"><div className="container"><SectionHeading eyebrow="My Style" title="Three ideas behind every class I teach" /><div className="pillars">{pillars.map(([tamil, word, copy]) => <article className="pillar" key={word}><p className="pillar__tamil">{tamil}</p><span className="pillar__word">{word}</span><p>{copy}</p></article>)}</div><div className="philosophy__story"><span className="eyebrow">AGAM Yoga</span><h3>Yoga from Within | அகம் — The Inner Self</h3><p>AGAM Yoga is the name of Anitha&apos;s practice space — the website and studio through which she teaches Hatha Yoga. It isn&apos;t a separate style of yoga.</p><p><strong>Hatha Yoga is where we begin — and where we stay.</strong> As a student&apos;s practice develops, sessions may move into a Hatha–Vinyasa rhythm, combining the stability and alignment of Hatha with more breath-led movement.</p></div></div></section>; }
