@@ -3,7 +3,6 @@ import { Classes } from "@/components/Classes";
 import { Contact } from "@/components/Contact";
 import { Footer } from "@/components/Footer";
 import { FloatingStripe } from "@/components/FloatingStripe";
-import { Gallery } from "@/components/Gallery";
 import { Hero } from "@/components/Hero";
 import { Navigation } from "@/components/Navigation";
 import { Philosophy } from "@/components/Philosophy";
@@ -19,7 +18,6 @@ export default function Home() {
       <About />
       <Philosophy />
       <YogaOfferings />
-      <Gallery />
       <Classes />
       <Reviews />
       <Contact />

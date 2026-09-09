@@ -18,7 +18,7 @@ export function Navigation() {
       <span className="sr-only">Toggle menu</span><span aria-hidden="true">{open ? "×" : "☰"}</span>
     </button>
     <ul className={`nav-links${open ? " nav-links--open" : ""}`} id="nav-links">
-      {links.map(([label, href]) => <li key={href}><a href={href} onClick={() => setOpen(false)}>{label}</a></li>)}
+      {links.map(([label, href]) => <li key={href}><a className={label === "Contact" ? "nav-contact" : undefined} href={href} onClick={() => setOpen(false)}>{label}</a></li>)}
     </ul>
   </nav></header>;
 }
