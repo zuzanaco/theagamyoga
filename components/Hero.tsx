@@ -4,9 +4,7 @@ export function Hero() {
   return <section className="hero" id="top">
     <div className="container hero__grid">
       <div className="hero__content">
-        <span className="eyebrow">Anitha Ramalingam · Cologne, Germany</span>
         <h1>Yoga is the practice<br />of turning <em>inward</em>.</h1>
-        <p className="hero__lede">I built theagamyoga as a breath-led practice space — rooted in the Tamil idea of <em>agam</em>, the inner landscape — for anyone who wants to reconnect with their own body and practice from within.</p>
         <div className="button-row"><a className="button" href="#classes">View classes</a><a className="button button--outline" href="#about">Meet your teacher</a></div>
       </div>
       <div className="hero-visual">
