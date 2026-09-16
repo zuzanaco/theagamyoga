@@ -1,3 +1,4 @@
+import { SectionRings } from "./SectionRings";
 import { SectionHeading } from "./SectionHeading";
 
 const pillars = [
@@ -6,4 +7,4 @@ const pillars = [
   ["மெய்ப்பொருள்", "Meiporul — Essence", "My alignment cues are about what's true for your body that day, not a textbook shape. I offer modifications freely — you'll never need to apologize for taking them."],
 ];
 
-export function Philosophy() { return <section className="philosophy" id="agam"><div className="container"><SectionHeading eyebrow="My Style" title="Three ideas behind every class I teach" /><div className="pillars">{pillars.map(([tamil, word, copy]) => <article className="pillar" key={word}><p className="pillar__tamil">{tamil}</p><span className="pillar__word">{word}</span><p>{copy}</p></article>)}</div></div></section>; }
+export function Philosophy() { return <section className="philosophy" id="agam"><SectionRings variant="style" /><div className="container"><SectionHeading eyebrow="My Style" title="Three ideas behind every class I teach" /><div className="pillars">{pillars.map(([tamil, word, copy]) => <article className="pillar" key={word}><p className="pillar__tamil">{tamil}</p><span className="pillar__word">{word}</span><p>{copy}</p></article>)}</div></div></section>; }
