@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { WaterNavWave } from "./WaterDividers";
 
 const links = [
   ["About", "#about"],
@@ -20,5 +21,5 @@ export function Navigation() {
     <ul className={`nav-links${open ? " nav-links--open" : ""}`} id="nav-links">
       {links.map(([label, href]) => <li key={href}><a className={label === "Contact" ? "nav-contact" : undefined} href={href} onClick={() => setOpen(false)}>{label}</a></li>)}
     </ul>
-  </nav></header>;
+  </nav><WaterNavWave /></header>;
 }

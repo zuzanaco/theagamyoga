@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <head><script dangerouslySetInnerHTML={{ __html: "try { const palette = localStorage.getItem('theagamyoga-palette'); if (palette === 'bordeaux' || palette === 'merlot') document.documentElement.dataset.palette = palette; } catch {}" }} /></head>
+      <head><script dangerouslySetInnerHTML={{ __html: "try { const palette = localStorage.getItem('theagamyoga-palette'); if (palette === 'water' || palette === 'pink') document.documentElement.dataset.palette = palette; } catch {}" }} /></head>
       <body>{children}</body>
     </html>
   );

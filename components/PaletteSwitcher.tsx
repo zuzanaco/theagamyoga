@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-const palettes = ["original", "bordeaux", "merlot"] as const;
-const labels = { original: "Original", bordeaux: "Bordeaux", merlot: "Merlot" };
+const palettes = ["original", "water", "pink"] as const;
+const labels = { original: "Original", water: "Water", pink: "Pink" };
 type Palette = (typeof palettes)[number];
 
 function savedPalette(): Palette {
