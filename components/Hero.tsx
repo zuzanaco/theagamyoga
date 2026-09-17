@@ -19,7 +19,7 @@ export function Hero() {
               <path className="hero-orbit__line" d={ripplePath(radius)} />
             </g>)}
           </svg>
-          <div className="hero-visual__photo"><Image src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=1000&q=85" alt="Outdoor yoga practice" fill priority sizes="(max-width: 860px) 80vw, 420px" /></div>
+          <div className="hero-visual__photo"><Image src="/images/hero-yoga-v2.png" alt="Yoga practice by the sea" fill priority sizes="(max-width: 860px) 80vw, 420px" /></div>
         </div>
       </div>
     </div>
