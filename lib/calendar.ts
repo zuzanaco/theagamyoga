@@ -1,7 +1,8 @@
 import { unstable_cache } from "next/cache";
 import { google } from "googleapis";
+import { siteContent } from "@/content/siteContent";
 
-export const CALENDAR_EVENT_LIMIT = 12;
+export const CALENDAR_EVENT_LIMIT = 250;
 export const CALENDAR_TIME_ZONE = "Europe/Berlin";
 export const CALENDAR_REVALIDATE_SECONDS = 600;
 
@@ -24,9 +25,12 @@ export type CalendarEvent = {
   allDay: boolean;
   day: string;
   month: string;
+  dateKey: string;
+  monthKey: string;
   dateLabel: string;
   timeLabel?: string;
   startTimestamp: number;
+  offeringId?: string;
 };
 
 export type CalendarResult = {
@@ -34,6 +38,7 @@ export type CalendarResult = {
   configured: boolean;
   requestSucceeded: boolean;
   calendarTimeZone: string;
+  currentMonthKey: string;
 };
 
 type CalendarConfig = {
@@ -51,11 +56,43 @@ function getConfig(): CalendarConfig {
 }
 
 function formatDate(date: Date) {
-  const parts = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", timeZone: CALENDAR_TIME_ZONE }).formatToParts(date);
+  const parts = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: CALENDAR_TIME_ZONE }).formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value || "";
+  const monthNumber = parts.find((part) => part.type === "month")?.value || "";
+  const dayNumber = parts.find((part) => part.type === "day")?.value || "";
   return {
-    day: parts.find((part) => part.type === "day")?.value || "",
-    month: parts.find((part) => part.type === "month")?.value || "",
+    day: dayNumber,
+    month: new Intl.DateTimeFormat("en-GB", { month: "short", timeZone: CALENDAR_TIME_ZONE }).format(date),
+    dateKey: `${year}-${monthNumber}-${dayNumber}`,
+    monthKey: `${year}-${monthNumber}`,
   };
+}
+
+function monthKeyFor(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", { month: "2-digit", year: "numeric", timeZone: CALENDAR_TIME_ZONE }).formatToParts(date);
+  return `${parts.find((part) => part.type === "year")?.value || ""}-${parts.find((part) => part.type === "month")?.value || ""}`;
+}
+
+export function getCurrentCalendarMonthKey() {
+  return monthKeyFor(new Date());
+}
+
+function getCalendarFetchWindow() {
+  const now = new Date();
+  return {
+    timeMin: new Date(Date.UTC(now.getUTCFullYear() - 1, now.getUTCMonth(), 1)).toISOString(),
+    timeMax: new Date(Date.UTC(now.getUTCFullYear() + 1, now.getUTCMonth() + 2, 0, 23, 59, 59)).toISOString(),
+  };
+}
+
+function normalizedTitle(value: string) {
+  return value.toLowerCase().replace(/[–—]/g, "-").replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function getOfferingId(title: string, description?: string) {
+  const metadataId = description?.match(/(?:^|\s)offering\s*:\s*([a-z0-9-]+)/i)?.[1];
+  if (metadataId && siteContent.offerings.some((offering) => offering.id === metadataId)) return metadataId;
+  return siteContent.offerings.find((offering) => normalizedTitle(offering.title) === normalizedTitle(title))?.id;
 }
 
 function formatTime(date: Date) {
@@ -76,7 +113,7 @@ function normalizeEvent(event: GoogleCalendarEvent, index: number): CalendarEven
 
   const endValue = event.end?.dateTime || event.end?.date || undefined;
   const endDate = event.end?.dateTime ? new Date(event.end.dateTime) : undefined;
-  const { day, month } = formatDate(startDate);
+  const { day, month, dateKey, monthKey } = formatDate(startDate);
   const description = event.description?.trim().replace(/\s+/g, " ");
 
   return {
@@ -89,9 +126,12 @@ function normalizeEvent(event: GoogleCalendarEvent, index: number): CalendarEven
     allDay,
     day,
     month,
+    dateKey,
+    monthKey,
     dateLabel: new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: CALENDAR_TIME_ZONE }).format(startDate),
     timeLabel: allDay ? "All day" : endDate && !Number.isNaN(endDate.getTime()) ? `${formatTime(startDate)}–${formatTime(endDate)}` : formatTime(startDate),
     startTimestamp: startDate.getTime(),
+    offeringId: getOfferingId(event.summary?.trim() || "Yoga class", description),
   };
 }
 
@@ -104,9 +144,11 @@ async function loadUpcomingCalendarEvents(): Promise<CalendarEvent[]> {
     scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
   });
   const calendar = google.calendar({ version: "v3", auth });
+  const { timeMin, timeMax } = getCalendarFetchWindow();
   const response = await calendar.events.list({
     calendarId,
-    timeMin: new Date().toISOString(),
+    timeMin,
+    timeMax,
     singleEvents: true,
     orderBy: "startTime",
     maxResults: CALENDAR_EVENT_LIMIT,
@@ -127,14 +169,15 @@ const getCachedUpcomingCalendarEvents = unstable_cache(loadUpcomingCalendarEvent
 export async function getUpcomingCalendarEvents(): Promise<CalendarResult> {
   const config = getConfig();
   const configured = Boolean(config.calendarId && config.serviceAccountEmail && config.serviceAccountPrivateKey);
-  if (!configured) return { events: [], configured: false, requestSucceeded: false, calendarTimeZone: CALENDAR_TIME_ZONE };
+  const currentMonthKey = getCurrentCalendarMonthKey();
+  if (!configured) return { events: [], configured: false, requestSucceeded: false, calendarTimeZone: CALENDAR_TIME_ZONE, currentMonthKey };
 
   try {
     const events = await getCachedUpcomingCalendarEvents();
-    return { events, configured: true, requestSucceeded: true, calendarTimeZone: CALENDAR_TIME_ZONE };
+    return { events, configured: true, requestSucceeded: true, calendarTimeZone: CALENDAR_TIME_ZONE, currentMonthKey };
   } catch (error) {
     console.warn("[calendar] Unable to load upcoming events", error instanceof Error ? error.message : "Unknown calendar error");
-    return { events: [], configured: true, requestSucceeded: false, calendarTimeZone: CALENDAR_TIME_ZONE };
+    return { events: [], configured: true, requestSucceeded: false, calendarTimeZone: CALENDAR_TIME_ZONE, currentMonthKey };
   }
 }
 

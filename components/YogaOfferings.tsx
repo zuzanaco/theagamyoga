@@ -1,4 +1,51 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import { SectionHeading } from "./SectionHeading";
 import { siteContent } from "@/content/siteContent";
+import { openContactForOffering } from "./ContactForm";
 
-export function YogaOfferings() { return <section id="offerings"><div className="container"><SectionHeading eyebrow="Current offerings" title="Build a practice from within." /><div className="offerings">{siteContent.offerings.map((offering) => <article className="offering" key={offering.number}><h3>{offering.title}</h3><p className="offering__tagline">{offering.tagline}</p><p>{offering.text}</p>{offering.note && <p className="offering__note">{offering.note}</p>}<a href="#contact">Enquire <span aria-hidden="true">→</span></a></article>)}</div></div></section>; }
+export function YogaOfferings() {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [canGoPrevious, setCanGoPrevious] = useState(false);
+  const [canGoNext, setCanGoNext] = useState(true);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const updateControls = () => {
+      const maxScroll = viewport.scrollWidth - viewport.clientWidth;
+      setCanGoPrevious(viewport.scrollLeft > 1);
+      setCanGoNext(viewport.scrollLeft < maxScroll - 1);
+    };
+    updateControls();
+    viewport.addEventListener("scroll", updateControls, { passive: true });
+    window.addEventListener("resize", updateControls);
+    return () => {
+      viewport.removeEventListener("scroll", updateControls);
+      window.removeEventListener("resize", updateControls);
+    };
+  }, []);
+
+  function move(direction: number) {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    viewport.scrollBy({ left: direction * viewport.clientWidth * .72, behavior: reducedMotion ? "auto" : "smooth" });
+  }
+
+  return <section id="offerings"><div className="container"><SectionHeading eyebrow="Current offerings" title="Build a practice from within." /><div className="offerings-carousel" aria-roledescription="carousel" aria-label="Current yoga offerings">
+    <button type="button" className="offerings__arrow offerings__arrow--previous" onClick={() => move(-1)} aria-label="Previous offering" disabled={!canGoPrevious}>←</button>
+    <div className="offerings" ref={viewportRef}>
+      <div className="offerings__track">{siteContent.offerings.map((offering) => <article className="offering" id={`offering-${offering.id}`} key={offering.id}>
+        <span className="offering__number">{offering.number}</span>
+        <h3>{offering.title}</h3>
+        <p className="offering__tagline">{offering.tagline}</p>
+        <p>{offering.text}</p>
+        {offering.note && <p className="offering__note">{offering.note}</p>}
+        <button type="button" className="enquiry-cta offering__enquire" onClick={() => openContactForOffering(offering.id)}>Enquire <span aria-hidden="true">→</span></button>
+      </article>)}</div>
+    </div>
+    <button type="button" className="offerings__arrow offerings__arrow--next" onClick={() => move(1)} aria-label="Next offering" disabled={!canGoNext}>→</button>
+  </div></div></section>;
+}
