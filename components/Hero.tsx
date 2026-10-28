@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { siteContent } from "@/content/siteContent";
 
 function ripplePath(r: number) {
   return `M 0 ${-r} C ${r * .58} ${-r * 1.03}, ${r * 1.02} ${-r * .55}, ${r} 0 C ${r * .98} ${r * .58}, ${r * .52} ${r * 1.02}, 0 ${r * .96} C ${-r * .59} ${r * .91}, ${-r * 1.02} ${r * .52}, ${-r * .96} 0 C ${-r * .91} ${-r * .56}, ${-r * .56} ${-r * .97}, 0 ${-r} Z`;
@@ -9,7 +10,7 @@ export function Hero() {
     <div className="container hero__grid">
       <div className="hero__content">
         <h1>Yoga is the practice<br />of turning <em>inward</em>.</h1>
-        <div className="button-row"><a className="button" href="#classes">View classes</a><a className="button button--outline" href="#about">Meet your teacher</a></div>
+        <div className="button-row"><a className="button" href="#classes">View classes</a><a className="button button--outline" href="#about">{siteContent.labels.meetAnitha}</a></div>
       </div>
       <div className="hero-visual">
         <div className="hero-visual__rings">

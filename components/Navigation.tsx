@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { WaterNavWave } from "./WaterDividers";
+import { siteContent } from "@/content/siteContent";
 
 const links = [
-  ["About", "#about"],
+  [siteContent.labels.about, "#about"],
+  ["Gallery", "#gallery"],
   ["Agam", "#agam"],
   ["Offerings", "#offerings"],
   ["Classes", "#classes"],

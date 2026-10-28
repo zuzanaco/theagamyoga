@@ -3,11 +3,11 @@ export const waterRibbonTextPath = "M0 56C170 6 345 100 550 54S930 5 1145 50S137
 const waterRibbonTopPath = "M0 0H1530V38C1370 94 1360 95 1145 50C930 5 755 8 550 54C345 100 170 6 0 56Z";
 
 export function WaterNavWave({ flipped = false }: { flipped?: boolean }) {
-  return <svg className={`water-nav-wave${flipped ? " water-nav-wave--flipped" : ""}`} viewBox="0 0 1440 64" preserveAspectRatio="none" aria-hidden="true"><path d={navWavePath} transform={flipped ? "rotate(180 720 32)" : undefined} /></svg>;
+  return <svg className={`water-nav-wave${flipped ? " water-nav-wave--flipped" : ""}`} viewBox="0 0 1440 64" preserveAspectRatio="none" aria-hidden="true"><g transform={flipped ? "rotate(180 720 32)" : undefined}><path className="water-wave-motion-path" data-water-wave-kind="nav" d={navWavePath} /></g></svg>;
 }
 
 export function WaterRibbonWave() {
-  return <svg className="water-ribbon-wave" viewBox="0 0 1440 100" preserveAspectRatio="none" aria-hidden="true"><path d={waterRibbonTopPath} /></svg>;
+  return <svg className="water-ribbon-wave" viewBox="0 0 1440 100" preserveAspectRatio="none" aria-hidden="true"><path className="water-wave-motion-path" data-water-wave-kind="ribbon" d={waterRibbonTopPath} /></svg>;
 }
 
 export function WaterCardScallop() {

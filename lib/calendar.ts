@@ -1,29 +1,31 @@
-const CALENDAR_API = "https://www.googleapis.com/calendar/v3/calendars";
-export const CALENDAR_EVENT_LIMIT = 8;
+import { unstable_cache } from "next/cache";
+import { google } from "googleapis";
+
+export const CALENDAR_EVENT_LIMIT = 12;
+export const CALENDAR_TIME_ZONE = "Europe/Berlin";
+export const CALENDAR_REVALIDATE_SECONDS = 600;
 
 type GoogleCalendarEvent = {
-  id?: string;
-  summary?: string;
-  description?: string;
-  location?: string;
-  start?: { date?: string; dateTime?: string; timeZone?: string };
-  end?: { date?: string; dateTime?: string; timeZone?: string };
-};
-
-type GoogleCalendarResponse = {
-  timeZone?: string;
-  items?: GoogleCalendarEvent[];
+  id?: string | null;
+  summary?: string | null;
+  description?: string | null;
+  location?: string | null;
+  start?: { date?: string | null; dateTime?: string | null } | null;
+  end?: { date?: string | null; dateTime?: string | null } | null;
 };
 
 export type CalendarEvent = {
   id: string;
   title: string;
+  description?: string;
+  location?: string;
+  start: string;
+  end?: string;
+  allDay: boolean;
   day: string;
   month: string;
   dateLabel: string;
   timeLabel?: string;
-  location?: string;
-  description?: string;
   startTimestamp: number;
 };
 
@@ -31,76 +33,117 @@ export type CalendarResult = {
   events: CalendarEvent[];
   configured: boolean;
   requestSucceeded: boolean;
-  calendarTimeZone?: string;
-  error?: string;
+  calendarTimeZone: string;
 };
 
-function getConfig() {
+type CalendarConfig = {
+  calendarId?: string;
+  serviceAccountEmail?: string;
+  serviceAccountPrivateKey?: string;
+};
+
+function getConfig(): CalendarConfig {
   return {
     calendarId: process.env.GOOGLE_CALENDAR_ID,
-    apiKey: process.env.GOOGLE_CALENDAR_API_KEY,
-    fallbackTimeZone: process.env.GOOGLE_CALENDAR_TIMEZONE || "Europe/Berlin",
+    serviceAccountEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    serviceAccountPrivateKey: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, "\n"),
   };
 }
 
-function formatDate(date: Date, timeZone: string) {
-  const parts = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", timeZone }).formatToParts(date);
-  return { day: parts.find((part) => part.type === "day")?.value || "", month: parts.find((part) => part.type === "month")?.value || "" };
+function formatDate(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", timeZone: CALENDAR_TIME_ZONE }).formatToParts(date);
+  return {
+    day: parts.find((part) => part.type === "day")?.value || "",
+    month: parts.find((part) => part.type === "month")?.value || "",
+  };
 }
 
-function formatTime(date: Date, timeZone: string) {
-  return new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone }).format(date);
+function formatTime(date: Date) {
+  return new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: CALENDAR_TIME_ZONE }).format(date);
 }
 
-function normalizeEvent(event: GoogleCalendarEvent, calendarTimeZone: string, index: number): CalendarEvent | null {
-  const dateValue = event.start?.dateTime || event.start?.date;
-  if (!dateValue) return null;
+function allDayDate(date: string) {
+  return new Date(`${date}T12:00:00Z`);
+}
 
-  const isAllDay = !event.start?.dateTime;
-  const start = isAllDay ? new Date(`${dateValue}T12:00:00Z`) : new Date(dateValue);
-  if (Number.isNaN(start.getTime())) return null;
+function normalizeEvent(event: GoogleCalendarEvent, index: number): CalendarEvent | null {
+  const startValue = event.start?.dateTime || event.start?.date;
+  if (!startValue) return null;
 
-  const timeZone = event.start?.timeZone || calendarTimeZone;
-  const { day, month } = formatDate(start, timeZone);
-  const end = event.end?.dateTime ? new Date(event.end.dateTime) : null;
-  const timeLabel = isAllDay ? "All day" : end && !Number.isNaN(end.getTime()) ? `${formatTime(start, timeZone)} – ${formatTime(end, timeZone)}` : formatTime(start, timeZone);
+  const allDay = !event.start?.dateTime;
+  const startDate = allDay ? allDayDate(startValue) : new Date(startValue);
+  if (Number.isNaN(startDate.getTime())) return null;
+
+  const endValue = event.end?.dateTime || event.end?.date || undefined;
+  const endDate = event.end?.dateTime ? new Date(event.end.dateTime) : undefined;
+  const { day, month } = formatDate(startDate);
   const description = event.description?.trim().replace(/\s+/g, " ");
 
   return {
-    id: event.id || `${dateValue}-${index}`,
+    id: event.id || `${startValue}-${index}`,
     title: event.summary?.trim() || "Yoga class",
+    description: description ? `${description.slice(0, 240)}${description.length > 240 ? "…" : ""}` : undefined,
+    location: event.location?.trim() || undefined,
+    start: allDay ? startValue : startDate.toISOString(),
+    end: endValue,
+    allDay,
     day,
     month,
-    dateLabel: new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone }).format(start),
-    timeLabel,
-    location: event.location?.trim() || undefined,
-    description: description ? `${description.slice(0, 240)}${description.length > 240 ? "…" : ""}` : undefined,
-    startTimestamp: start.getTime(),
+    dateLabel: new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: CALENDAR_TIME_ZONE }).format(startDate),
+    timeLabel: allDay ? "All day" : endDate && !Number.isNaN(endDate.getTime()) ? `${formatTime(startDate)}–${formatTime(endDate)}` : formatTime(startDate),
+    startTimestamp: startDate.getTime(),
   };
 }
 
-export async function getUpcomingCalendarEvents(): Promise<CalendarResult> {
-  const { calendarId, apiKey, fallbackTimeZone } = getConfig();
-  const configured = Boolean(calendarId && apiKey);
-  if (!configured) return { events: [], configured: false, requestSucceeded: false, calendarTimeZone: fallbackTimeZone };
+async function loadUpcomingCalendarEvents(): Promise<CalendarEvent[]> {
+  const { calendarId, serviceAccountEmail, serviceAccountPrivateKey } = getConfig();
+  if (!calendarId || !serviceAccountEmail || !serviceAccountPrivateKey) throw new Error("Calendar credentials are incomplete");
 
-  const params = new URLSearchParams({ key: apiKey as string, timeMin: new Date().toISOString(), singleEvents: "true", orderBy: "startTime", maxResults: String(CALENDAR_EVENT_LIMIT), showDeleted: "false" });
-  const url = `${CALENDAR_API}/${encodeURIComponent(calendarId as string)}/events?${params.toString()}`;
+  const auth = new google.auth.GoogleAuth({
+    credentials: { client_email: serviceAccountEmail, private_key: serviceAccountPrivateKey },
+    scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+  });
+  const calendar = google.calendar({ version: "v3", auth });
+  const response = await calendar.events.list({
+    calendarId,
+    timeMin: new Date().toISOString(),
+    singleEvents: true,
+    orderBy: "startTime",
+    maxResults: CALENDAR_EVENT_LIMIT,
+    showDeleted: false,
+  });
+
+  return (response.data.items || [])
+    .map((event, index) => normalizeEvent(event, index))
+    .filter((event): event is CalendarEvent => Boolean(event))
+    .sort((a, b) => a.startTimestamp - b.startTimestamp);
+}
+
+const getCachedUpcomingCalendarEvents = unstable_cache(loadUpcomingCalendarEvents, ["google-calendar-upcoming"], {
+  revalidate: CALENDAR_REVALIDATE_SECONDS,
+  tags: ["google-calendar"],
+});
+
+export async function getUpcomingCalendarEvents(): Promise<CalendarResult> {
+  const config = getConfig();
+  const configured = Boolean(config.calendarId && config.serviceAccountEmail && config.serviceAccountPrivateKey);
+  if (!configured) return { events: [], configured: false, requestSucceeded: false, calendarTimeZone: CALENDAR_TIME_ZONE };
 
   try {
-    const response = await fetch(url, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Google Calendar returned ${response.status}`);
-    const payload = (await response.json()) as GoogleCalendarResponse;
-    const calendarTimeZone = payload.timeZone || fallbackTimeZone;
-    const events = (payload.items || []).map((event, index) => normalizeEvent(event, calendarTimeZone, index)).filter((event): event is CalendarEvent => Boolean(event)).sort((a, b) => a.startTimestamp - b.startTimestamp);
-    return { events, configured, requestSucceeded: true, calendarTimeZone };
+    const events = await getCachedUpcomingCalendarEvents();
+    return { events, configured: true, requestSucceeded: true, calendarTimeZone: CALENDAR_TIME_ZONE };
   } catch (error) {
-    console.warn("[calendar] Unable to load upcoming events", error);
-    return { events: [], configured, requestSucceeded: false, calendarTimeZone: fallbackTimeZone, error: error instanceof Error ? error.message : "Unknown calendar error" };
+    console.warn("[calendar] Unable to load upcoming events", error instanceof Error ? error.message : "Unknown calendar error");
+    return { events: [], configured: true, requestSucceeded: false, calendarTimeZone: CALENDAR_TIME_ZONE };
   }
 }
 
 export function getCalendarConfigStatus() {
-  const { calendarId, apiKey, fallbackTimeZone } = getConfig();
-  return { calendarIdConfigured: Boolean(calendarId), apiKeyConfigured: Boolean(apiKey), configuredTimeZone: fallbackTimeZone };
+  const config = getConfig();
+  return {
+    calendarIdConfigured: Boolean(config.calendarId),
+    serviceAccountEmailConfigured: Boolean(config.serviceAccountEmail),
+    serviceAccountPrivateKeyConfigured: Boolean(config.serviceAccountPrivateKey),
+    configuredTimeZone: CALENDAR_TIME_ZONE,
+  };
 }

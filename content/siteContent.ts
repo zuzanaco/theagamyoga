@@ -1,4 +1,20 @@
 export const siteContent = {
+  labels: {
+    about: "About me",
+    meetAnitha: "Meet Anitha",
+    feedbacks: "Feedbacks",
+    style: "AGAM Yoga — அகம் — Within.",
+  },
+  galleryImages: [
+    { src: "/images/about-yoga-v2.png", alt: "Yoga practice in a garden", placeholder: false },
+    { src: "/images/hero-yoga-v2.png", alt: "Yoga practice by the sea", placeholder: false },
+    { src: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1600&q=85", alt: "Sunlit yoga practice", placeholder: true },
+    { src: "https://images.unsplash.com/photo-1510894347713-fc3ed6fdf539?auto=format&fit=crop&w=1600&q=85", alt: "Quiet natural landscape", placeholder: true },
+    { src: "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?auto=format&fit=crop&w=1600&q=85", alt: "Yoga mat and practice props", placeholder: true },
+    { src: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1600&q=85", alt: "Yoga pose outdoors", placeholder: true },
+    { src: "https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b?auto=format&fit=crop&w=1600&q=85", alt: "Yoga practice in a studio", placeholder: true },
+    { src: "https://images.unsplash.com/photo-1600618528240-fb9fc964b853?auto=format&fit=crop&w=1600&q=85", alt: "Meditation cushion in a quiet room", placeholder: true },
+  ],
   contact: {
     email: "theahamyoga@gmail.com",
     phone: "+49 1525 3067509",
@@ -8,6 +24,12 @@ export const siteContent = {
     { number: "01", title: "10-Class Beginner Yoga Workshop", tagline: "Start from the Foundation. Build Your Practice.", text: "A structured 10-class workshop for people who are new to yoga or want to rebuild their foundation. It introduces basic Hatha Yoga postures, alignment, body and breath awareness, foundational movement patterns, strength and flexibility, Sun Salutation fundamentals, simple Hatha–Vinyasa flow, relaxation, mindful practice and an introduction to Yoga Nidra.", note: "No previous yoga experience required." },
     { number: "02", title: "Hatha–Vinyasa Yoga", tagline: "Foundation meets Flow.", text: "Once the fundamentals are established, Hatha–Vinyasa brings together Hatha stability, alignment and awareness with Vinyasa movement, breath and flow.", note: "Sessions can be adapted to experience level, individual goals and available time." },
     { number: "03", title: "Yoga Nidra", tagline: "Turn Inward. Settle In.", text: "A guided relaxation and meditation practice offered as part of the AGAM Yoga approach — a quiet space to pause, become aware and turn inward.", note: "From movement to stillness. From the outside to the inside." },
+    { number: "04", title: "1-to-1 Individual Classes", tagline: "Online or in person.", text: "Available online or in person.", note: "" },
+  ],
+  principles: [
+    ["மௌனம்", "Mounam — Stillness", "I open and close every class in real silence. Not a formality — I give you a few full minutes to arrive in the body before any movement begins."],
+    ["மூச்சு", "Moochu — Breath", "I let breath lead every movement, never the other way round. If your breath gets short, I'll tell you the pose is too big — that's the only rule I hold to."],
+    ["மெய்ப்பொருள்", "Meiporul — Essence", "My alignment cues are about what's true for your body that day, not a textbook shape. I offer modifications freely — you'll never need to apologize for taking them."],
   ],
   reviews: [
     ["I really enjoyed learning yoga in person from Anitha. She teaches with patience and makes every session easy to follow. I feel more relaxed, refreshed, and energetic after her classes. I'm grateful for her wonderful guidance and encouragement.", "Sujatha, San Jose, California"],
