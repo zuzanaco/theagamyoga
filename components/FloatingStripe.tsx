@@ -1,3 +1,8 @@
+"use client";
+
+import { useSiteLanguage } from "./LanguageProvider";
+
 export function FloatingStripe() {
-  return <div className="floating-stripe" aria-hidden="true"><p className="floating-stripe__line">BREATH-LED MOVEMENT ✦ STILLNESS ✦ COME HOME TO YOURSELF ✦ BREATH-LED MOVEMENT ✦ STILLNESS ✦ COME HOME TO YOURSELF ✦</p></div>;
+  const { t } = useSiteLanguage();
+  return <div className="floating-stripe" aria-hidden="true"><p className="floating-stripe__line">{t.stripe}</p></div>;
 }

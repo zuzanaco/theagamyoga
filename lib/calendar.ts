@@ -1,12 +1,16 @@
+import "server-only";
 import { unstable_cache } from "next/cache";
 import { google } from "googleapis";
 import { siteContent } from "@/content/siteContent";
+import { calendarLabels, calendarSettings } from "@/content/calendarContent";
 
+// API page size, not a cap on the total event list.
 export const CALENDAR_EVENT_LIMIT = 250;
-export const CALENDAR_TIME_ZONE = "Europe/Berlin";
-export const CALENDAR_REVALIDATE_SECONDS = 600;
+export const CALENDAR_TIME_ZONE = calendarSettings.timeZone;
+export const CALENDAR_REVALIDATE_SECONDS = calendarSettings.revalidateSeconds;
 
 type GoogleCalendarEvent = {
+  status?: string | null;
   id?: string | null;
   summary?: string | null;
   description?: string | null;
@@ -39,7 +43,26 @@ export type CalendarResult = {
   requestSucceeded: boolean;
   calendarTimeZone: string;
   currentMonthKey: string;
+  lastSuccessfulFetchAt?: string;
+  fetchedEventCount?: number;
+  fetchWindowStart?: string;
+  fetchWindowEnd?: string;
 };
+
+type CalendarSnapshot = {
+  events: CalendarEvent[];
+  fetchedAt: string;
+  fetchedEventCount: number;
+  timeMin: string;
+  timeMax: string;
+};
+
+let lastSuccessfulSnapshot: CalendarSnapshot | undefined;
+let lastAttempt: { at: string; succeeded: boolean } | undefined;
+
+export function getCalendarFetchDiagnostics() {
+  return lastAttempt;
+}
 
 type CalendarConfig = {
   calendarId?: string;
@@ -77,12 +100,41 @@ export function getCurrentCalendarMonthKey() {
   return monthKeyFor(new Date());
 }
 
-function getCalendarFetchWindow() {
-  const now = new Date();
+function startOfCalendarMonth(year: number, monthIndex: number) {
+  const date = new Date(Date.UTC(year, monthIndex, 1, 12));
+  const parts = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", timeZone: CALENDAR_TIME_ZONE, timeZoneName: "longOffset" }).formatToParts(date);
+  const month = parts.find(part => part.type === "month")!.value;
+  const normalizedYear = parts.find(part => part.type === "year")!.value;
+  const offset = parts.find(part => part.type === "timeZoneName")!.value.replace("GMT", "") || "+00:00";
+  return new Date(`${normalizedYear}-${month}-01T00:00:00${offset}`).toISOString();
+}
+
+export function getCalendarFetchWindow(now = new Date()) {
+  const [year, month] = monthKeyFor(now).split("-").map(Number);
   return {
-    timeMin: new Date(Date.UTC(now.getUTCFullYear() - 1, now.getUTCMonth(), 1)).toISOString(),
-    timeMax: new Date(Date.UTC(now.getUTCFullYear() + 1, now.getUTCMonth() + 2, 0, 23, 59, 59)).toISOString(),
+    // Previous month, current month, and the next six complete months.
+    timeMin: startOfCalendarMonth(year, month - 2),
+    timeMax: startOfCalendarMonth(year, month + 6),
   };
+}
+
+// Render as React text, never Calendar HTML. Keep practical paragraph/line breaks.
+export function calendarDescriptionText(value: string | null | undefined) {
+  if (!value) return undefined;
+  const entities: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
+  const text = value.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>|<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, "")
+    .replace(/<\/?(?:br|p|div|li|ul|ol|h[1-6])\b[^>]*>/gi, "\n")
+    .replace(/<\/?[a-z][^>]*>/gi, "")
+    .replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos|nbsp);/gi, (match, entity: string) => {
+      if (!entity.startsWith("#")) return entities[entity.toLowerCase()] ?? match;
+      const code = entity[1].toLowerCase() === "x" ? Number.parseInt(entity.slice(2), 16) : Number(entity.slice(1));
+      return code > 0 && code <= 0x10ffff && !(code >= 0xd800 && code <= 0xdfff) ? String.fromCodePoint(code) : match;
+    })
+    .replace(/\r\n?/g, "\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return text || undefined;
 }
 
 function normalizedTitle(value: string) {
@@ -103,7 +155,8 @@ function allDayDate(date: string) {
   return new Date(`${date}T12:00:00Z`);
 }
 
-function normalizeEvent(event: GoogleCalendarEvent, index: number): CalendarEvent | null {
+export function normalizeEvent(event: GoogleCalendarEvent, index: number): CalendarEvent | null {
+  if (event.status === "cancelled") return null;
   const startValue = event.start?.dateTime || event.start?.date;
   if (!startValue) return null;
 
@@ -114,12 +167,12 @@ function normalizeEvent(event: GoogleCalendarEvent, index: number): CalendarEven
   const endValue = event.end?.dateTime || event.end?.date || undefined;
   const endDate = event.end?.dateTime ? new Date(event.end.dateTime) : undefined;
   const { day, month, dateKey, monthKey } = formatDate(startDate);
-  const description = event.description?.trim().replace(/\s+/g, " ");
+  const description = calendarDescriptionText(event.description);
 
   return {
     id: event.id || `${startValue}-${index}`,
-    title: event.summary?.trim() || "Yoga class",
-    description: description ? `${description.slice(0, 240)}${description.length > 240 ? "…" : ""}` : undefined,
+    title: event.summary?.trim() || calendarLabels.defaultTitle,
+    description,
     location: event.location?.trim() || undefined,
     start: allDay ? startValue : startDate.toISOString(),
     end: endValue,
@@ -129,39 +182,57 @@ function normalizeEvent(event: GoogleCalendarEvent, index: number): CalendarEven
     dateKey,
     monthKey,
     dateLabel: new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: CALENDAR_TIME_ZONE }).format(startDate),
-    timeLabel: allDay ? "All day" : endDate && !Number.isNaN(endDate.getTime()) ? `${formatTime(startDate)}–${formatTime(endDate)}` : formatTime(startDate),
+    timeLabel: allDay ? calendarLabels.allDay : endDate && !Number.isNaN(endDate.getTime()) ? `${formatTime(startDate)}–${formatTime(endDate)}` : formatTime(startDate),
     startTimestamp: startDate.getTime(),
-    offeringId: getOfferingId(event.summary?.trim() || "Yoga class", description),
+    offeringId: getOfferingId(event.summary?.trim() || calendarLabels.defaultTitle, description),
   };
 }
 
-async function loadUpcomingCalendarEvents(): Promise<CalendarEvent[]> {
-  const { calendarId, serviceAccountEmail, serviceAccountPrivateKey } = getConfig();
-  if (!calendarId || !serviceAccountEmail || !serviceAccountPrivateKey) throw new Error("Calendar credentials are incomplete");
+async function loadUpcomingCalendarEvents(calendarId: string, timeMin: string, timeMax: string): Promise<CalendarSnapshot> {
+  try {
+    const { serviceAccountEmail, serviceAccountPrivateKey } = getConfig();
+    if (!serviceAccountEmail || !serviceAccountPrivateKey) throw new Error("Calendar credentials are incomplete");
+    const auth = new google.auth.GoogleAuth({
+      credentials: { client_email: serviceAccountEmail, private_key: serviceAccountPrivateKey },
+      scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+    });
+    const calendar = google.calendar({ version: "v3", auth });
+    const rawEvents: GoogleCalendarEvent[] = [];
+    const seenTokens = new Set<string>();
+    let pageToken: string | undefined;
+    do {
+      const response = await calendar.events.list({
+        calendarId, timeMin, timeMax, pageToken,
+        singleEvents: true,
+        orderBy: "startTime",
+        maxResults: CALENDAR_EVENT_LIMIT,
+        showDeleted: false,
+        timeZone: CALENDAR_TIME_ZONE,
+      }, { timeout: 20000, retry: false });
+      rawEvents.push(...(response.data.items || []));
+      pageToken = response.data.nextPageToken || undefined;
+      if (pageToken && seenTokens.has(pageToken)) throw new Error("Calendar pagination did not advance");
+      if (pageToken) seenTokens.add(pageToken);
+    } while (pageToken);
 
-  const auth = new google.auth.GoogleAuth({
-    credentials: { client_email: serviceAccountEmail, private_key: serviceAccountPrivateKey },
-    scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
-  });
-  const calendar = google.calendar({ version: "v3", auth });
-  const { timeMin, timeMax } = getCalendarFetchWindow();
-  const response = await calendar.events.list({
-    calendarId,
-    timeMin,
-    timeMax,
-    singleEvents: true,
-    orderBy: "startTime",
-    maxResults: CALENDAR_EVENT_LIMIT,
-    showDeleted: false,
-  });
-
-  return (response.data.items || [])
-    .map((event, index) => normalizeEvent(event, index))
-    .filter((event): event is CalendarEvent => Boolean(event))
-    .sort((a, b) => a.startTimestamp - b.startTimestamp);
+    const events = rawEvents.map((event, index) => normalizeEvent(event, index))
+      .filter((event): event is CalendarEvent => Boolean(event))
+      .sort((a, b) => a.startTimestamp - b.startTimestamp);
+    const fetchedAt = new Date().toISOString();
+    const snapshot = { events, fetchedAt, fetchedEventCount: rawEvents.length, timeMin, timeMax };
+    lastSuccessfulSnapshot = snapshot;
+    lastAttempt = { at: fetchedAt, succeeded: true };
+    return snapshot;
+  } catch {
+    lastAttempt = { at: new Date().toISOString(), succeeded: false };
+    // Avoid logging raw Google responses, credentials or event contents.
+    throw new Error("Calendar request failed");
+  }
 }
 
-const getCachedUpcomingCalendarEvents = unstable_cache(loadUpcomingCalendarEvents, ["google-calendar-upcoming"], {
+// Cache the complete paginated snapshot once. Arguments include source and window,
+// so switching Calendar IDs or crossing a month cannot reuse an unrelated list.
+const getCachedUpcomingCalendarEvents = unstable_cache(loadUpcomingCalendarEvents, ["google-calendar-snapshot-v2"], {
   revalidate: CALENDAR_REVALIDATE_SECONDS,
   tags: ["google-calendar"],
 });
@@ -169,15 +240,19 @@ const getCachedUpcomingCalendarEvents = unstable_cache(loadUpcomingCalendarEvent
 export async function getUpcomingCalendarEvents(): Promise<CalendarResult> {
   const config = getConfig();
   const configured = Boolean(config.calendarId && config.serviceAccountEmail && config.serviceAccountPrivateKey);
-  const currentMonthKey = getCurrentCalendarMonthKey();
-  if (!configured) return { events: [], configured: false, requestSucceeded: false, calendarTimeZone: CALENDAR_TIME_ZONE, currentMonthKey };
+  const base = { configured, calendarTimeZone: CALENDAR_TIME_ZONE, currentMonthKey: getCurrentCalendarMonthKey() };
+  if (!configured) return { ...base, events: [], requestSucceeded: false };
 
   try {
-    const events = await getCachedUpcomingCalendarEvents();
-    return { events, configured: true, requestSucceeded: true, calendarTimeZone: CALENDAR_TIME_ZONE, currentMonthKey };
-  } catch (error) {
-    console.warn("[calendar] Unable to load upcoming events", error instanceof Error ? error.message : "Unknown calendar error");
-    return { events: [], configured: true, requestSucceeded: false, calendarTimeZone: CALENDAR_TIME_ZONE, currentMonthKey };
+    const { timeMin, timeMax } = getCalendarFetchWindow();
+    const snapshot = await getCachedUpcomingCalendarEvents(config.calendarId!, timeMin, timeMax);
+    return {
+      ...base, events: snapshot.events, requestSucceeded: true,
+      lastSuccessfulFetchAt: snapshot.fetchedAt, fetchedEventCount: snapshot.fetchedEventCount,
+      fetchWindowStart: snapshot.timeMin, fetchWindowEnd: snapshot.timeMax,
+    };
+  } catch {
+    return { ...base, events: [], requestSucceeded: false, lastSuccessfulFetchAt: lastSuccessfulSnapshot?.fetchedAt };
   }
 }
 

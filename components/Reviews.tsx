@@ -1,10 +1,13 @@
 "use client";
 
+import { useSiteLanguage } from "./LanguageProvider";
+
 import { useEffect, useRef, useState } from "react";
 import { siteContent } from "@/content/siteContent";
 import { SectionHeading } from "./SectionHeading";
 
 export function Reviews() {
+  const { t } = useSiteLanguage();
   const viewportRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [selectedReview, setSelectedReview] = useState<number | null>(null);
@@ -59,29 +62,29 @@ export function Reviews() {
   }
 
   return <section id="reviews">
-    <div className="container"><SectionHeading eyebrow={siteContent.labels.feedbacks} title="Words from the practice." /></div>
-    <div className="reviews-carousel" role="region" aria-roledescription="carousel" aria-label="Client reviews">
-      <button type="button" className="gallery__arrow gallery__arrow--previous" onClick={() => move(-1)} aria-label="Previous review" aria-controls="reviews-viewport" disabled={!canGoPrevious}>←</button>
-      <div id="reviews-viewport" className="reviews__viewport" ref={viewportRef} tabIndex={0} role="region" aria-label="Reviews — scroll to read more">
+    <div className="container"><SectionHeading eyebrow={t.labels.feedbacks} title={t.reviews.title} /></div>
+    <div className="reviews-carousel" role="region" aria-roledescription="carousel" aria-label={t.reviews.carousel}>
+      <button type="button" className="gallery__arrow gallery__arrow--previous" onClick={() => move(-1)} aria-label={t.reviews.previous} aria-controls="reviews-viewport" disabled={!canGoPrevious}>←</button>
+      <div id="reviews-viewport" className="reviews__viewport" ref={viewportRef} tabIndex={0} role="region" aria-label={t.reviews.scroll}>
         <div className="reviews__track">{siteContent.reviews.map(([quote, name], index) => <figure className="review" key={name}>
-          <div className="stars" aria-label="Five stars">★★★★★</div>
-          <blockquote className="review__quote">“{quote}”</blockquote>
+          <div className="stars" aria-label={t.reviews.stars}>★★★★★</div>
+          <blockquote className="review__quote" lang="en">“{quote}”</blockquote>
           <figcaption>— {name}</figcaption>
-          <span className="review__open-label" aria-hidden="true">Open review ↗</span>
-          <button className="review__open" type="button" aria-label={`Open full review from ${name}`} aria-haspopup="dialog" onClick={() => setSelectedReview(index)} />
+          <span className="review__open-label" aria-hidden="true">{t.reviews.open}</span>
+          <button className="review__open" type="button" aria-label={`${t.reviews.openFrom} ${name}`} aria-haspopup="dialog" onClick={() => setSelectedReview(index)} />
         </figure>)}</div>
       </div>
-      <button type="button" className="gallery__arrow gallery__arrow--next" onClick={() => move(1)} aria-label="Next review" aria-controls="reviews-viewport" disabled={!canGoNext}>→</button>
+      <button type="button" className="gallery__arrow gallery__arrow--next" onClick={() => move(1)} aria-label={t.reviews.next} aria-controls="reviews-viewport" disabled={!canGoNext}>→</button>
     </div>
-    <div className="container"><p className="review-note">A selection of client words shared with permission.</p></div>
+    <div className="container"><p className="review-note">{t.reviews.note}</p></div>
     <dialog ref={dialogRef} className="review-modal" aria-labelledby="review-modal-name" onClose={() => setSelectedReview(null)} onClick={event => { if (event.target === event.currentTarget) setSelectedReview(null); }}>
       {selectedReview !== null && <div className="review-modal__panel">
         <div className="review-modal__header">
-          <div className="stars" aria-label="Five stars">★★★★★</div>
-          <button type="button" className="review-modal__close" aria-label="Close review" onClick={() => setSelectedReview(null)}>×</button>
+          <div className="stars" aria-label={t.reviews.stars}>★★★★★</div>
+          <button type="button" className="review-modal__close" aria-label={t.reviews.close} onClick={() => setSelectedReview(null)}>×</button>
         </div>
         <div className="review-modal__content">
-          <blockquote>“{siteContent.reviews[selectedReview][0]}”</blockquote>
+          <blockquote lang="en">“{siteContent.reviews[selectedReview][0]}”</blockquote>
           <p id="review-modal-name">— {siteContent.reviews[selectedReview][1]}</p>
         </div>
       </div>}

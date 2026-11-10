@@ -1,5 +1,7 @@
 "use client";
 
+import { useSiteLanguage } from "./LanguageProvider";
+
 import type { KeyboardEvent, SyntheticEvent } from "react";
 
 function ripplePath(r: number) {
@@ -7,9 +9,9 @@ function ripplePath(r: number) {
 }
 
 const principles = [
-  { href: "#agam-essence", label: "Go to Essence — Meiporul" },
-  { href: "#agam-breath", label: "Go to Breath — Moochu" },
-  { href: "#agam-stillness", label: "Go to Stillness — Mounam" },
+  { href: "#agam-essence" },
+  { href: "#agam-breath" },
+  { href: "#agam-stillness" },
 ];
 
 function navigateToPrinciple(event: SyntheticEvent<HTMLAnchorElement>, href: string) {
@@ -24,8 +26,9 @@ function navigateToPrinciple(event: SyntheticEvent<HTMLAnchorElement>, href: str
 }
 
 export function HeroRings() {
+  const { t } = useSiteLanguage();
   return <svg className="hero-visual__ring-svg" viewBox="0 0 400 400">
-    {[188, 158, 128].map((radius, index) => <a className={`hero-orbit-link hero-orbit-link--${index}`} href={principles[index].href} aria-label={principles[index].label} onClick={(event) => navigateToPrinciple(event, principles[index].href)} onKeyDown={(event: KeyboardEvent<HTMLAnchorElement>) => { if (event.key === " ") navigateToPrinciple(event, principles[index].href); }} key={radius}>
+    {[188, 158, 128].map((radius, index) => <a className={`hero-orbit-link hero-orbit-link--${index}`} href={principles[index].href} aria-label={t.hero.rings[index]} onClick={(event) => navigateToPrinciple(event, principles[index].href)} onKeyDown={(event: KeyboardEvent<HTMLAnchorElement>) => { if (event.key === " ") navigateToPrinciple(event, principles[index].href); }} key={radius}>
       <g className={`hero-orbit hero-orbit--${index}`} transform={`translate(200 200) rotate(${index * 37})`}>
         <path className="hero-orbit__hit" d={ripplePath(radius)} />
         <path className="hero-orbit__line" d={ripplePath(radius)} />

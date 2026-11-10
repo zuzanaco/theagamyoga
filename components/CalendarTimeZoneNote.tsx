@@ -1,11 +1,5 @@
-"use client";
+import { getTranslations, type Language } from "@/lib/i18n/translations";
 
-import { useSyncExternalStore } from "react";
-
-export function CalendarTimeZoneNote() {
-  const browserReady = useSyncExternalStore(() => () => {}, () => true, () => false);
-  const timeZone = browserReady ? Intl.DateTimeFormat().resolvedOptions().timeZone : undefined;
-  const label = timeZone ? `Times shown in your local time · ${timeZone}` : browserReady ? "Times shown in your local time" : "Times shown in Cologne time · Europe/Berlin";
-
-  return <p className="calendar-timezone" aria-live="polite">{label}</p>;
+export function CalendarTimeZoneNote({ language = "en" }: { language?: Language }) {
+  return <p className="calendar-timezone">{getTranslations(language).calendar.timeZoneNote}</p>;
 }

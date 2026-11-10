@@ -1,3 +1,4 @@
+import type { Language } from "@/lib/i18n/translations";
 import { About } from "@/components/About";
 import { Classes } from "@/components/Classes";
 import { Contact } from "@/components/Contact";
@@ -12,12 +13,13 @@ import { Reviews } from "@/components/Reviews";
 import { YogaOfferings } from "@/components/YogaOfferings";
 import { WaterWaveMotion } from "@/components/WaterWaveMotion";
 
-export const revalidate = 600;
+// Calendar data has its own five-minute cache; do not layer page ISR over it.
 
-export default function Home() {
+
+export function HomePage({ language }: { language: Language }) {
   return (
     <main>
-      <PaletteSwitcher />
+      {process.env.NODE_ENV === "development" && <PaletteSwitcher />}
       <WaterWaveMotion />
       <Navigation />
       <Hero />
@@ -26,7 +28,7 @@ export default function Home() {
       <Gallery />
       <Philosophy />
       <YogaOfferings />
-      <Classes />
+      <Classes language={language} />
       <Reviews />
       <Contact />
       <Footer />

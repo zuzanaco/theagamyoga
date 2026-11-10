@@ -1,10 +1,13 @@
 "use client";
 
+import { useSiteLanguage } from "./LanguageProvider";
+
 import Image from "next/image";
 import { useEffect, useRef } from "react";
 import { siteContent } from "@/content/siteContent";
 
 export function Gallery() {
+  const { t } = useSiteLanguage();
   const viewportRef = useRef<HTMLDivElement>(null);
   const images = siteContent.galleryImages;
   const loopedImages = Array.from({ length: 5 }, () => images).flat();
@@ -59,13 +62,13 @@ export function Gallery() {
     viewport.scrollBy({ left: direction * step, behavior: reducedMotion ? "instant" : "smooth" });
   }
 
-  return <section className="gallery" id="gallery" aria-label="Practice images">
-    <div className="gallery__carousel container" aria-roledescription="carousel" aria-label="Yoga practice gallery">
-      <button type="button" className="gallery__arrow gallery__arrow--previous" onClick={() => move(-1)} aria-label="Scroll to previous gallery images">←</button>
+  return <section className="gallery" id="gallery" aria-label={t.gallery.label}>
+    <div className="gallery__carousel container" aria-roledescription="carousel" aria-label={t.gallery.carousel}>
+      <button type="button" className="gallery__arrow gallery__arrow--previous" onClick={() => move(-1)} aria-label={t.gallery.previous}>←</button>
       <div className="gallery__viewport" ref={viewportRef}>
-        <div className="gallery__track">{loopedImages.map((image, index) => <div className="gallery__item" key={`${index}-${image.src}`}><Image src={image.src} alt={image.alt} fill sizes="(max-width: 560px) 70vw, (max-width: 960px) 30vw, 18rem" /></div>)}</div>
+        <div className="gallery__track">{loopedImages.map((image, index) => <div className="gallery__item" key={`${index}-${image.src}`}><Image src={image.src} alt={t.gallery.alts[index % images.length]} fill sizes="(max-width: 560px) 70vw, (max-width: 960px) 30vw, 18rem" /></div>)}</div>
       </div>
-      <button type="button" className="gallery__arrow gallery__arrow--next" onClick={() => move(1)} aria-label="Scroll to next gallery images">→</button>
+      <button type="button" className="gallery__arrow gallery__arrow--next" onClick={() => move(1)} aria-label={t.gallery.next}>→</button>
     </div>
   </section>;
 }

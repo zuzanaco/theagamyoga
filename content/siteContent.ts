@@ -15,7 +15,7 @@ export const siteContent = {
     { src: "/images/ChatGPT Image Nov 2, 2026, 04_01_13 PM-7.png", alt: "Students practising seated yoga with raised arms" },
   ],
   contact: {
-    email: "theahamyoga@gmail.com",
+    email: "theagam.yoga@gmail.com",
     phone: "+49 1525 3067509",
     instagram: "https://instagram.com/theagam.yoga",
   },

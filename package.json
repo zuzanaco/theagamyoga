@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:calendar": "node --test tests/calendar.test.cjs",
+    "test:i18n": "node --test tests/i18n.test.cjs"
   },
   "dependencies": {
     "googleapis": "^178.1.1",
