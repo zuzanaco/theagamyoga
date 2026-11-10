@@ -6,6 +6,7 @@ import type { ContactEventContext } from "./ContactForm";
 import { dateLocale, getTranslations, type Language } from "@/lib/i18n/translations";
 import { useSiteLanguage } from "./LanguageProvider";
 import { CalendarEventDetail } from "./CalendarEventDetail";
+import { CalendarTimeZoneNote } from "./CalendarTimeZoneNote";
 
 type MonthCalendarProps = {
   events: CalendarEvent[];
@@ -35,7 +36,8 @@ function calendarDays(date: Date) {
   const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
   const offset = (firstDay.getDay() + 6) % 7;
   const count = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  return [...Array(offset).fill(null), ...Array.from({ length: count }, (_, index) => index + 1)];
+  const trailing = (7 - (offset + count) % 7) % 7;
+  return [...Array(offset).fill(null), ...Array.from({ length: count }, (_, index) => index + 1), ...Array(trailing).fill(null)];
 }
 
 function eventTime(event: CalendarEvent, language: Language = "en") {
@@ -62,6 +64,7 @@ export function MonthCalendar({ events, initialMonthKey, calendarTimeZone }: Mon
   const eventsByDate = useMemo(() => {
     const grouped = new Map<string, CalendarEvent[]>();
     events.forEach((event) => grouped.set(event.dateKey, [...(grouped.get(event.dateKey) || []), event]));
+    grouped.forEach(dayEvents => dayEvents.sort((a, b) => Number(b.allDay) - Number(a.allDay) || a.startTimestamp - b.startTimestamp));
     return grouped;
   }, [events]);
   const selectedEvents = selectedDateKey ? eventsByDate.get(selectedDateKey) || [] : [];
@@ -94,18 +97,28 @@ export function MonthCalendar({ events, initialMonthKey, calendarTimeZone }: Mon
       </div>
       <button type="button" className="month-calendar__today" onClick={showToday}>{calendarLabels.today}</button>
     </div>
+    <div className="month-calendar__grid-scroll" tabIndex={0} role="region" aria-label={`${monthLabel(visibleMonth, locale)} ${calendarLabels.grid}`}>
     <div className="month-calendar__grid" role="grid" aria-label={`${monthLabel(visibleMonth, locale)} ${calendarLabels.grid}`}>
       {weekdays.map((weekday) => <div className="month-calendar__weekday" role="columnheader" key={weekday}>{weekday}</div>)}
       {days.map((day, index) => {
         if (!day) return <div className="month-calendar__day month-calendar__day--empty" role="gridcell" aria-hidden="true" key={`empty-${index}`} />;
         const key = `${visibleMonthKey}-${String(day).padStart(2, "0")}`;
         const dayEvents = eventsByDate.get(key) || [];
-        return <button type="button" className={`month-calendar__day${key === todayKey ? " month-calendar__day--today" : ""}${key === selectedDateKey ? " month-calendar__day--selected" : ""}`} role="gridcell" aria-selected={key === selectedDateKey} aria-label={`${day}${language === "de" ? "." : ""} ${monthLabel(visibleMonth, locale)}${dayEvents.length ? `, ${dayEvents.length} ${dayEvents.length === 1 ? calendarLabels.classSingular : calendarLabels.classPlural}` : `, ${calendarLabels.noClasses}`}`} onClick={() => showDate(key)} key={key}>
+        return <button type="button" className={`month-calendar__day${key === todayKey ? " month-calendar__day--today" : ""}${key === selectedDateKey ? " month-calendar__day--selected" : ""}`} role="gridcell" aria-selected={key === selectedDateKey} aria-current={key === todayKey ? "date" : undefined} aria-label={`${day}${language === "de" ? "." : ""} ${monthLabel(visibleMonth, locale)}${dayEvents.length ? `, ${dayEvents.length} ${dayEvents.length === 1 ? calendarLabels.classSingular : calendarLabels.classPlural}` : `, ${calendarLabels.noClasses}`}`} onClick={() => showDate(key)} key={key}>
           <span className="month-calendar__day-number">{day}</span>
-          <span className="month-calendar__events">{dayEvents.slice(0, 2).map((event) => <span className="month-calendar__event" key={event.id}><i aria-hidden="true" />{event.title}<small>{eventTime(event, language)}</small></span>)}{dayEvents.length > 2 && <span className="month-calendar__more">+{dayEvents.length - 2} {calendarLabels.more}</span>}</span>
+          {dayEvents.length > 0 && <span className="month-calendar__previews" aria-hidden="true">
+            {dayEvents.slice(0, 2).map(event => {
+              const preview = `${!event.allDay && event.timeLabel ? `${event.timeLabel.split("–")[0]} ` : ""}${event.title}`;
+              return <span className="month-calendar__preview" title={preview} key={event.id}><i /><span>{preview}</span></span>;
+            })}
+            {dayEvents.length > 2 && <span className="month-calendar__more">+{dayEvents.length - 2} {calendarLabels.more}</span>}
+          </span>}
         </button>;
       })}
-    </div></div>
+    </div>
+    </div>
+    <CalendarTimeZoneNote language={language} />
+    </div>
     <aside className="month-calendar__side month-calendar__details" aria-live="polite">
       <div className="month-calendar__details-heading"><span className="eyebrow">{selectedEvent ? calendarLabels.selectedEvent : calendarLabels.selectedDate}</span>{!selectedEvent && <h3>{selectedDateKey ? new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${selectedDateKey}T12:00:00`)) : calendarLabels.chooseDay}</h3>}</div>
       {selectedEvent ? <CalendarEventDetail key={selectedEvent.id} event={selectedEvent} onEnquire={enquireAbout} /> : <p className="month-calendar__empty-detail">{calendarLabels.empty}</p>}

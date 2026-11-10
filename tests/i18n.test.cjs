@@ -72,3 +72,59 @@ test('German Calendar presentation localizes dates and controls but preserves na
   assert.ok(markup.includes('Samstag, 14. November'));
   assert.ok(markup.includes(load('lib/i18n/translations.ts').getTranslations('de').calendar.enquire));
 });
+
+test('month overview limits agenda previews to two rows, summarizes extras and completes every week', () => {
+  for (const language of ['en', 'de']) {
+    const load = harness(language);
+    const { MonthCalendar } = load('components/MonthCalendar.tsx');
+    const events = [1, 2, 5, 10].flatMap((count, index) => Array.from({ length: count }, (_, item) => ({ id: `${index}-${item}`, dateKey: `2026-11-${String(index + 1).padStart(2, '0')}`, title: `Native event ${index}-${item}`, timeLabel: '10:00–11:00', allDay: false, startTimestamp: item })));
+    const markup = renderToStaticMarkup(React.createElement(MonthCalendar, { events, initialMonthKey: '2026-11', calendarTimeZone: 'Europe/Berlin' }));
+    assert.ok(markup.includes('10:00 Native event 0-0'));
+    assert.ok(!markup.includes('10:00–11:00'));
+    assert.equal((markup.match(/class="month-calendar__preview"/g) || []).length, 7);
+    assert.ok(!markup.includes('Native event 2-2'));
+    assert.ok(!markup.includes('Native event 3-9'));
+    assert.ok(markup.includes(`+3 ${language === 'de' ? 'weitere' : 'more'}`));
+    assert.ok(markup.includes(`+8 ${language === 'de' ? 'weitere' : 'more'}`));
+    assert.match(markup, /aria-label="1\.? November 2026, 1 (class|Kurs)"/);
+    for (const [day, count] of [[2, 2], [3, 5], [4, 10]]) {
+      assert.ok(markup.includes(`aria-label="${day}${language === 'de' ? '.' : ''} November 2026, ${count} ${language === 'de' ? 'Kurse' : 'classes'}"`));
+    }
+    assert.match(markup, /aria-label="5\.? November 2026, (no classes|keine Kurse)"/);
+    assert.equal((markup.match(/role="gridcell"/g) || []).length, 42);
+    assert.equal((markup.match(/class="month-calendar__day month-calendar__day--empty"/g) || []).length, 12);
+  }
+});
+
+test('month padding handles first/last week and today is programmatically identified', () => {
+  const { MonthCalendar } = harness()('components/MonthCalendar.tsx');
+  for (const [month, slots, blanks] of [['2027-02', 28, 0], ['2026-05', 35, 4], ['2026-11', 42, 12]]) {
+    const markup = renderToStaticMarkup(React.createElement(MonthCalendar, { events: [], initialMonthKey: month, calendarTimeZone: 'Europe/Berlin' }));
+    assert.equal((markup.match(/role="gridcell"/g) || []).length, slots);
+    assert.equal((markup.match(/class="month-calendar__day month-calendar__day--empty"/g) || []).length, blanks);
+  }
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit' }).formatToParts(new Date());
+  const currentMonth = `${parts.find(part => part.type === 'year').value}-${parts.find(part => part.type === 'month').value}`;
+  const markup = renderToStaticMarkup(React.createElement(MonthCalendar, { events: [], initialMonthKey: currentMonth, calendarTimeZone: 'Europe/Berlin' }));
+  assert.equal((markup.match(/aria-current="date"/g) || []).length, 1);
+});
+
+
+test('agenda previews put all-day events before timed events in chronological order', () => {
+  const { MonthCalendar } = harness()('components/MonthCalendar.tsx');
+  const common = { dateKey: '2026-11-13' };
+  const events = [
+    { ...common, id: 'late', title: 'Later class', allDay: false, startTimestamp: 18, timeLabel: '18:00–19:00' },
+    { ...common, id: 'all-day', title: 'Day Off', allDay: true, startTimestamp: 0, timeLabel: 'All day' },
+    { ...common, id: 'early', title: 'Morning class', allDay: false, startTimestamp: 8, timeLabel: '08:00–09:00' },
+  ];
+  const markup = renderToStaticMarkup(React.createElement(MonthCalendar, { events, initialMonthKey: '2026-11', calendarTimeZone: 'Europe/Berlin' }));
+  assert.ok(markup.includes('<span>Day Off</span>'));
+  assert.ok(!markup.includes('All day Day Off'));
+  assert.ok(markup.includes('08:00 Morning class'));
+  assert.ok(markup.indexOf('Day Off') < markup.indexOf('08:00 Morning class'));
+  assert.ok(!markup.includes('Later class'));
+  assert.ok(markup.includes('+1 more'));
+  assert.equal(events[0].id, 'late', 'sorting must not mutate the supplied event array');
+  assert.ok(markup.indexOf('calendar-timezone') > markup.indexOf('month-calendar__grid'));
+});
