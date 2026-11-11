@@ -106,6 +106,7 @@ export function MonthCalendar({ events, initialMonthKey, calendarTimeZone }: Mon
         const dayEvents = eventsByDate.get(key) || [];
         return <button type="button" className={`month-calendar__day${key === todayKey ? " month-calendar__day--today" : ""}${key === selectedDateKey ? " month-calendar__day--selected" : ""}`} role="gridcell" aria-selected={key === selectedDateKey} aria-current={key === todayKey ? "date" : undefined} aria-label={`${day}${language === "de" ? "." : ""} ${monthLabel(visibleMonth, locale)}${dayEvents.length ? `, ${dayEvents.length} ${dayEvents.length === 1 ? calendarLabels.classSingular : calendarLabels.classPlural}` : `, ${calendarLabels.noClasses}`}`} onClick={() => showDate(key)} key={key}>
           <span className="month-calendar__day-number">{day}</span>
+          {dayEvents.length > 0 && <span className="month-calendar__markers" aria-hidden="true"><i />{dayEvents.length > 1 && <span>{dayEvents.length}</span>}</span>}
           {dayEvents.length > 0 && <span className="month-calendar__previews" aria-hidden="true">
             {dayEvents.slice(0, 2).map(event => {
               const preview = `${!event.allDay && event.timeLabel ? `${event.timeLabel.split("–")[0]} ` : ""}${event.title}`;

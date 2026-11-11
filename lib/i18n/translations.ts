@@ -7,6 +7,9 @@ const en = {
   "labels": siteContent.labels,
   "nav": {
     "main": "Main navigation",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "reviews": "Reviews",
     "home": "theagamyoga home",
     "menu": "Toggle menu",
     "gallery": "Gallery",
@@ -69,7 +72,6 @@ const en = {
     "chapter": "Now, with my move to Germany, I bring this experience into a new chapter.",
     "signature": "AGAM Yoga — அகம் — Within."
   },
-  "stripe": "BREATH-LED MOVEMENT ✦ STILLNESS ✦ COME HOME TO YOURSELF ✦ BREATH-LED MOVEMENT ✦ STILLNESS ✦ COME HOME TO YOURSELF ✦",
   "philosophyTitle": "Three ideas behind every class I teach",
   "principles": siteContent.principles,
   "offerings": siteContent.offerings,
@@ -168,7 +170,7 @@ export type Dictionary = Localized<typeof en>;
 
 const de: Dictionary = {
   labels: { about: "Über mich", meetAnitha: "Anitha kennenlernen", feedbacks: "Rückmeldungen", style: "AGAM Yoga — அகம் — Im Inneren." },
-  nav: { main: "Hauptnavigation", home: "theagamyoga Startseite", menu: "Menü öffnen oder schließen", gallery: "Galerie", agam: "Agam", offerings: "Angebote", classes: "Kurse", contact: "Kontakt", language: "Sprache", english: "English", german: "Deutsch" },
+  nav: { main: "Hauptnavigation", openMenu: "Menü öffnen", closeMenu: "Menü schließen", reviews: "Rückmeldungen", home: "theagamyoga Startseite", menu: "Menü öffnen oder schließen", gallery: "Galerie", agam: "Agam", offerings: "Angebote", classes: "Kurse", contact: "Kontakt", language: "Sprache", english: "English", german: "Deutsch" },
   hero: { first: "Yoga ist die Praxis,", before: "sich nach ", emphasis: "innen zu wenden", after: ".", classes: "Kurse ansehen", photo: "Yogapraxis am Meer", rings: ["Zur Essenz — Meiporul", "Zum Atem — Moochu", "Zur Stille — Mounam"] },
   about: {
     photo: "Yogapraxis in einem Garten",
@@ -189,7 +191,6 @@ const de: Dictionary = {
     chapter: "Mit meinem Umzug nach Deutschland nehme ich diese Erfahrung nun in ein neues Kapitel mit.",
     signature: "AGAM Yoga — அகம் — Im Inneren."
   },
-  stripe: "ATEMGEFÜHRTE BEWEGUNG ✦ STILLE ✦ KOMM BEI DIR SELBST AN ✦ ATEMGEFÜHRTE BEWEGUNG ✦ STILLE ✦ KOMM BEI DIR SELBST AN ✦",
   philosophyTitle: "Drei Gedanken hinter jeder Stunde, die ich unterrichte",
   principles: [
     ["மௌனம்", "Mounam — Stille", "Ich beginne und beende jede Stunde in wirklicher Stille. Nicht als Formalität — ich gebe dir einige volle Minuten, um im Körper anzukommen, bevor die Bewegung beginnt."],

@@ -128,3 +128,13 @@ test('agenda previews put all-day events before timed events in chronological or
   assert.equal(events[0].id, 'late', 'sorting must not mutate the supplied event array');
   assert.ok(markup.indexOf('calendar-timezone') > markup.indexOf('month-calendar__grid'));
 });
+
+test('gallery image URLs preserve escaped filenames for the production optimizer', () => {
+  const load = harness();
+  const { Gallery } = load('components/Gallery.tsx');
+  const { siteContent } = load('content/siteContent.ts');
+  const markup = renderToStaticMarkup(React.createElement(Gallery));
+  for (const image of siteContent.galleryImages) {
+    assert.ok(markup.includes(`url=${encodeURIComponent(image.src.split("/").map(encodeURIComponent).join("/"))}`), `optimizer must receive an escaped path for ${image.src}`);
+  }
+});

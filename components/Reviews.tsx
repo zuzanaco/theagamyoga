@@ -83,7 +83,7 @@ export function Reviews() {
           <div className="stars" aria-label={t.reviews.stars}>★★★★★</div>
           <button type="button" className="review-modal__close" aria-label={t.reviews.close} onClick={() => setSelectedReview(null)}>×</button>
         </div>
-        <div className="review-modal__content">
+        <div className="review-modal__content" tabIndex={0} role="region" aria-labelledby="review-modal-name">
           <blockquote lang="en">“{siteContent.reviews[selectedReview][0]}”</blockquote>
           <p id="review-modal-name">— {siteContent.reviews[selectedReview][1]}</p>
         </div>

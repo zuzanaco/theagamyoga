@@ -65,8 +65,8 @@ export function Gallery() {
   return <section className="gallery" id="gallery" aria-label={t.gallery.label}>
     <div className="gallery__carousel container" aria-roledescription="carousel" aria-label={t.gallery.carousel}>
       <button type="button" className="gallery__arrow gallery__arrow--previous" onClick={() => move(-1)} aria-label={t.gallery.previous}>←</button>
-      <div className="gallery__viewport" ref={viewportRef}>
-        <div className="gallery__track">{loopedImages.map((image, index) => <div className="gallery__item" key={`${index}-${image.src}`}><Image src={image.src} alt={t.gallery.alts[index % images.length]} fill sizes="(max-width: 560px) 70vw, (max-width: 960px) 30vw, 18rem" /></div>)}</div>
+      <div className="gallery__viewport" ref={viewportRef} tabIndex={0} role="group" aria-label={t.gallery.carousel}>
+        <div className="gallery__track">{loopedImages.map((image, index) => <div className="gallery__item" key={`${index}-${image.src}`}><Image src={image.src.split("/").map(encodeURIComponent).join("/")} alt={t.gallery.alts[index % images.length]} fill sizes="(max-width: 1280px) min(80vw, calc(224px + 5vw)), 288px" /></div>)}</div>
       </div>
       <button type="button" className="gallery__arrow gallery__arrow--next" onClick={() => move(1)} aria-label={t.gallery.next}>→</button>
     </div>

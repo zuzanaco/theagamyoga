@@ -10,7 +10,7 @@ export function Hero() {
   return <section className="hero" id="top">
     <div className="container hero__grid">
       <div className="hero__content">
-        <h1>{t.hero.first}<br />{t.hero.before}<em>{t.hero.emphasis}</em>{t.hero.after}</h1>
+        <h1>{t.hero.first}{" "}<br />{t.hero.before}<em>{t.hero.emphasis}</em>{t.hero.after}</h1>
         <div className="button-row"><a className="button" href="#classes">{t.hero.classes}</a><a className="button button--outline" href="#about">{t.labels.meetAnitha}</a></div>
       </div>
       <div className="hero-visual">

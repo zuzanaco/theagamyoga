@@ -3,7 +3,6 @@ import { About } from "@/components/About";
 import { Classes } from "@/components/Classes";
 import { Contact } from "@/components/Contact";
 import { Footer } from "@/components/Footer";
-import { FloatingStripe } from "@/components/FloatingStripe";
 import { Gallery } from "@/components/Gallery";
 import { Hero } from "@/components/Hero";
 import { Navigation } from "@/components/Navigation";
@@ -23,7 +22,6 @@ export function HomePage({ language }: { language: Language }) {
       <WaterWaveMotion />
       <Navigation />
       <Hero />
-      <FloatingStripe />
       <About />
       <Gallery />
       <Philosophy />
