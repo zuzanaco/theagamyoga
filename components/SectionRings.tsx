@@ -14,7 +14,7 @@ export function SectionRings({ variant }: { variant: "style" | "classes" | "cont
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
-    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce), (max-width: 1023px)");
     const rings = Array.from(element.querySelectorAll<HTMLElement>(".water-ring"));
     let frame = 0;
     let active = false;

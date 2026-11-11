@@ -1,10 +1,34 @@
+"use client";
+
+import { useSiteLanguage } from "./LanguageProvider";
+
+import { useEffect, useRef, useState } from "react";
 import { SectionRings } from "./SectionRings";
 import { SectionHeading } from "./SectionHeading";
 
-const pillars = [
-  ["மௌனம்", "Mounam — Stillness", "I open and close every class in real silence. Not a formality — I give you a few full minutes to arrive in the body before any movement begins."],
-  ["மூச்சு", "Moochu — Breath", "I let breath lead every movement, never the other way round. If your breath gets short, I'll tell you the pose is too big — that's the only rule I hold to."],
-  ["மெய்ப்பொருள்", "Meiporul — Essence", "My alignment cues are about what's true for your body that day, not a textbook shape. I offer modifications freely — you'll never need to apologize for taking them."],
-];
+const principleIds = ["agam-stillness", "agam-breath", "agam-essence"];
+const highlightDurationMs = 4500;
 
-export function Philosophy() { return <section className="philosophy" id="agam"><SectionRings variant="style" /><div className="container"><SectionHeading eyebrow="My Style" title="Three ideas behind every class I teach" /><div className="pillars">{pillars.map(([tamil, word, copy]) => <article className="pillar" key={word}><p className="pillar__tamil">{tamil}</p><span className="pillar__word">{word}</span><p>{copy}</p></article>)}</div></div></section>; }
+export function Philosophy() {
+  const { t } = useSiteLanguage();
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const handleNavigate = (event: Event) => {
+      const id = (event as CustomEvent<{ id?: string }>).detail?.id;
+      if (!id || !principleIds.includes(id)) return;
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+      setHighlightedId(null);
+      window.requestAnimationFrame(() => setHighlightedId(id));
+      timerRef.current = window.setTimeout(() => setHighlightedId(null), highlightDurationMs);
+    };
+    window.addEventListener("theagamyoga:principle-navigate", handleNavigate);
+    return () => {
+      window.removeEventListener("theagamyoga:principle-navigate", handleNavigate);
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  return <section className="philosophy" id="agam"><SectionRings variant="style" /><div className="container"><SectionHeading eyebrow={t.labels.style} title={t.philosophyTitle} /><div className="pillars">{t.principles.map(([tamil, word, copy], index) => <article className={`pillar pillar--${index}${highlightedId === principleIds[index] ? " pillar--highlighted" : ""}`} id={principleIds[index]} key={word}><p className="pillar__tamil">{tamil}</p><span className="pillar__word">{word}</span><p>{copy}</p></article>)}</div></div></section>;
+}
